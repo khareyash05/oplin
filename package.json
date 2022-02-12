@@ -11,6 +11,8 @@
     "joplin-plugin"
   ],
   "devDependencies": {
+    "@types/imap": "^0.8.35",
+    "@types/mailparser": "^3.4.0",
     "@types/node": "^14.0.14",
     "chalk": "^4.1.0",
     "copy-webpack-plugin": "^6.1.0",
@@ -23,5 +25,12 @@
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "yargs": "^16.2.0"
+  },
+  "dependencies": {
+    "framer-motion": "^4.1.17",
+    "imap": "^0.8.19",
+    "mailparser": "^3.4.0",
+    "net": "^1.0.2",
+    "tls": "^0.0.1"
   }
 }
