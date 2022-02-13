@@ -2,8 +2,8 @@ import joplin from 'api';
 import Imap from "imap";
 const inspect = require('util').inspect;
 
-// import {simpleParser} from 'mailparser';
-var simpleParser = require("mailparser").simpleParser;
+import {simpleParser} from 'mailparser';
+// var simpleParser = require("mailparser").simpleParser;
 var email:string;
 var pass : string;
 
@@ -61,7 +61,8 @@ joplin.plugins.register({
 					//  console.log(base64.encode(parsed.attachments[0].content));
 					//  console.log("Attachments " +parsed.attachments[0].content); // for attachments
 					});
-				  });
+				console.log(stream);
+			});				
 				});
 				f.once('error', ex => {
 				  return Promise.reject(ex);
@@ -82,5 +83,6 @@ joplin.plugins.register({
 			console.log('Connection ended');
 		  });
 	  
-		  imap.connect();}
+		  imap.connect();
+	}
 });
