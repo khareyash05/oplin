@@ -1,11 +1,12 @@
 import joplin from 'api';
 import Imap from "imap";
 const inspect = require('util').inspect;
+const parse = require('parse-email')
 
-import {simpleParser} from 'mailparser';
-// var simpleParser = require("mailparser").simpleParser;
 var email:string;
 var pass : string;
+var textAsHtml : string;
+var textAsPlain : string;
 
 joplin.plugins.register({
 	onStart: async function() {
@@ -35,45 +36,55 @@ joplin.plugins.register({
 			tlsOptions: { rejectUnauthorized: false }
 		};
 		const imap = new Imap(imapConfig);
-		imap.once('ready', () => {
-			imap.openBox('INBOX', false, () => {
-			  imap.search(['UNSEEN', ['ON', new Date()]], (err, results) => {
-				const f = imap.fetch(results, {bodies: ''});
-				f.on('message', msg => {
-				  msg.on('body', stream => {
-					simpleParser(stream, async (err, parsed) => {
-					  const {from, subject, textAsHtml, text} = parsed;
-					  console.log(parsed);
-					  /* Make API call to save the data
-						 Save the retrieved data into a database.
-						 E.t.c
-					  */
-					 console.log("Text is here"+text);
-					 console.log("HTML is here"+textAsHtml);
-					//  text1 = text;
-					//   html = textAsHtml;
-					// //  markdown = converter.convert(html);
-					//  markdown = html2md(html);
-					//  console.log("Markdown is here"+markdown);
-					//  console.log(parsed.attachments);
-					//  content1 = parsed.attachments[0].content;
-					//  console.log(content1);
-					//  console.log(base64.encode(parsed.attachments[0].content));
-					//  console.log("Attachments " +parsed.attachments[0].content); // for attachments
+		  imap.once('ready', () => {
+			function openInbox(cb) {
+				imap.openBox('INBOX', true, cb);
+			  }
+			openInbox(function(err, box) {
+				if (err) throw err;
+				var f = imap.seq.fetch(box.messages.total + ':*', { bodies: ['HEADER.FIELDS (FROM)','TEXT'] });
+				f.on('message', function(msg, seqno) {
+				  console.log('Message #%d', seqno);
+				  var prefix = '(#' + seqno + ') ';
+				  msg.on('body', function(stream, info) {
+					if (info.which === 'TEXT')
+					  console.log(prefix + 'Body [%s] found, %d total bytes', inspect(info.which), info.size);
+					var buffer = '', count = 0;
+					stream.on('data', function(chunk) {
+					  count += chunk.length;
+					  buffer += chunk.toString('utf8');
+					  parse(buffer)
+					  .then(mail => {
+						  console.log(mail.textAsHtml)
+						  textAsHtml = mail.textAsHtml;
+						  textAsPlain = mail.text;
+						})
+					  if (info.which === 'TEXT')
+						console.log(prefix + 'Body [%s] (%d/%d)', inspect(info.which), count, info.size);
 					});
-				console.log(stream);
-			});				
+					stream.once('end', function() {
+					  if (info.which !== 'TEXT')
+						console.log(prefix + 'Parsed header: %s', inspect(Imap.parseHeader(buffer)));
+					  else
+						console.log(prefix + 'Body [%s] Finished', inspect(info.which));
+					});
+				  });
+				  msg.once('attributes', function(attrs) {
+					console.log(prefix + 'Attributes: %s', inspect(attrs, false, 8));
+				  });
+				  msg.once('end', function() {
+					console.log(prefix + 'Finished');
+				  });
 				});
-				f.once('error', ex => {
-				  return Promise.reject(ex);
+				f.once('error', function(err) {
+				  console.log('Fetch error: ' + err);
 				});
-				f.once('end', () => {
+				f.once('end', function() {
 				  console.log('Done fetching all messages!');
 				  imap.end();
 				});
 			  });
-			});
-		  });
+		  })
 	  
 		  imap.once('error', err => {
 			console.log(err);
