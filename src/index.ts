@@ -3,10 +3,10 @@ import Imap from "imap";
 const inspect = require('util').inspect;
 const parse = require('parse-email')
 
-var email:string;
-var pass : string;
-var textAsHtml : string;
-var textAsPlain : string;
+var email:string = '';
+var pass : string = '';
+var textAsHtml : string = '';
+var textAsPlain : string = '';
 
 joplin.plugins.register({
 	onStart: async function() {
@@ -46,7 +46,7 @@ joplin.plugins.register({
 				f.on('message', function(msg, seqno) {
 				  console.log('Message #%d', seqno);
 				  var prefix = '(#' + seqno + ') ';
-				  msg.on('body', function(stream, info) {
+				  msg.on('body', async (stream, info)=> {
 					if (info.which === 'TEXT')
 					  console.log(prefix + 'Body [%s] found, %d total bytes', inspect(info.which), info.size);
 					var buffer = '', count = 0;
@@ -55,9 +55,11 @@ joplin.plugins.register({
 					  buffer += chunk.toString('utf8');
 					  parse(buffer)
 					  .then(mail => {
+						  console.log(mail);
 						  console.log(mail.textAsHtml)
+						  console.log(mail.text);						  
 						  textAsHtml = mail.textAsHtml;
-						  textAsPlain = mail.text;
+						  textAsPlain = mail.text;						  
 						})
 					  if (info.which === 'TEXT')
 						console.log(prefix + 'Body [%s] (%d/%d)', inspect(info.which), count, info.size);
@@ -76,24 +78,10 @@ joplin.plugins.register({
 					console.log(prefix + 'Finished');
 				  });
 				});
-				f.once('error', function(err) {
-				  console.log('Fetch error: ' + err);
-				});
-				f.once('end', function() {
-				  console.log('Done fetching all messages!');
-				  imap.end();
-				});
-			  });
-		  })
+				dialogs.showMessageBox(textAsHtml);
+			});
+		})
 	  
-		  imap.once('error', err => {
-			console.log(err);
-		  });
-	  
-		  imap.once('end', () => {
-			console.log('Connection ended');
-		  });
-	  
-		  imap.connect();
+		imap.connect();		  
 	}
 });
