@@ -2,6 +2,7 @@ import joplin from 'api';
 import Imap from "imap";
 const inspect = require('util').inspect;
 const parse = require('parse-email')
+var converter = require('html-to-markdown');
 
 var email:string = '';
 var pass : string = '';
@@ -55,11 +56,16 @@ joplin.plugins.register({
 					  buffer += chunk.toString('utf8');
 					  parse(buffer)
 					  .then(mail => {
+						  console.log("data herre");						  
 						  console.log(mail);
 						  console.log(mail.textAsHtml)
-						  console.log(mail.text);						  
+						  console.log(mail.text);
+						  console.log("data ends here");						  						  
 						  textAsHtml = mail.textAsHtml;
-						  textAsPlain = mail.text;						  
+						  textAsPlain = mail.text;		
+						  console.log("Md here");
+						  var markdown = converter.convert(textAsHtml);	
+						  console.log(markdown);						  			  
 						})
 					  if (info.which === 'TEXT')
 						console.log(prefix + 'Body [%s] (%d/%d)', inspect(info.which), count, info.size);
@@ -78,7 +84,9 @@ joplin.plugins.register({
 					console.log(prefix + 'Finished');
 				  });
 				});
-				dialogs.showMessageBox(textAsHtml);
+				// dialogs.showMessageBox(textAsHtml);
+				
+				
 			});
 		})
 	  
